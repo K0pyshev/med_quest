@@ -1,0 +1,313 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+* {
+  color: #ffffff;
+  font-family: 'Open Sans', sans-serif;
+}
+
+html {
+  /*scrollbar-color: #494949 rgba(0, 0, 0, 0.01);*/
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  background-color: #171717;
+  display: flex;
+}
+
+.side-bar {
+  background-color: #212121;
+  height: 100vh;
+  width: 244px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+button {
+  font-size: 16px;
+  border:none;
+  /*border: solid 0.5px rgba(255, 255, 255, 0.5);*/
+  background-color: transparent;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px;
+}
+
+button:hover {
+  transition: background-color 0.3s ease, transform 0.2s ease, border-color 0.3s;
+  background-color: #333333;
+}
+
+nav {
+  border-top: solid 0.5px rgba(255, 255, 255, 0.5);
+  padding: 10px;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.history {
+  padding: 10px;
+  margin: 10px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 16px; 
+}
+
+.history li {
+  list-style-type: none;
+  padding: 15px 0;
+  cursor: pointer;
+}
+
+.main {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.Name {
+  font-size: 30px;
+}
+
+.info {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  padding: 10px;
+}
+
+.input-container {
+  position: relative;
+  width: 100%;
+  max-width: 650px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.bottom-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+input {
+  flex-grow: 1;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 12px 15px;
+  border-radius: 20px;
+  transition: box-shadow 0.5s ease;
+  height: 50px;
+}
+
+input:focus {
+  box-shadow: rgba(194, 255, 247, 0.3) 0 54px 55px,
+    rgba(194, 255, 247, 0.05) 0 -12px 30px,
+    rgba(194, 255, 247, 0.05) 0 4px 6px,
+    rgba(194, 255, 247, 0.05) 0 12px 13px,
+    rgba(194, 255, 247, 0.05) 0 -3px 5px;
+}
+
+#submit {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#submit:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+#submit::after {
+  content: '';
+  position: absolute;
+  bottom: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transition: transform 0.3s ease;
+}
+
+#submit.animate::after {
+  animation: load-up 0.8s forwards;
+}
+
+@keyframes load-up {
+  0% {
+    transform: translateY(100%);
+  }
+
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+.material-symbols-outlined {
+  font-size: 24px;
+  color: #ffffff;
+  z-index: 1;
+}
+
+.material-symbols-outlined {
+  font-size: 24px;
+  color: #ffffff;
+}
+
+textarea {
+  font-size: 17px;
+  flex-grow: 1;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 12px 15px;
+  border-radius: 20px;
+  resize: none;
+  overflow: hidden;
+  font-family: 'Open Sans', sans-serif;
+  font-size: px;
+  color: #ffffff;
+  line-height: 1.5;
+  transition: box-shadow 0.5s ease;
+}
+
+textarea:focus {
+  box-shadow: rgba(194, 255, 247, 0.3) 0 54px 55px,
+    rgba(194, 255, 247, 0.05) 0 -12px 30px,
+    rgba(194, 255, 247, 0.05) 0 4px 6px,
+    rgba(194, 255, 247, 0.05) 0 12px 13px,
+    rgba(194, 255, 247, 0.05) 0 -3px 5px;
+}
+
+.feed {
+  overflow-y: auto; /* Включаем вертикальную прокрутку */
+  overflow-x: hidden; /* Убираем горизонтальную прокрутку */
+  width: 1100px; /* Ширина вашего контейнера */
+  padding: 0; /* Отступы внутри контейнера */
+  border-radius: 20px; /* Скругление углов */
+  position: relative; /* Относительное позиционирование */
+}
+
+.feed::-webkit-scrollbar {
+  width: 10px; /* Ширина скроллбара */
+}
+
+.feed::-webkit-scrollbar-track {
+  background: #212121; /* Цвет дорожки */
+  border-radius: 10px; /* Скругление углов дорожки */
+  margin-right: 0px; /* Отступ дорожки справа */
+}
+
+.feed::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);; /* Цвет ползунка */
+  border-radius: 10px; /* Скругление углов ползунка */
+}
+
+.feed::-webkit-scrollbar-thumb:hover {
+  background: #333333; /* Цвет ползунка при наведении */
+}
+
+
+/*
+.feed::-webkit-scrollbar {
+  display: none; /* Убираем полосу прокрутки для WebKit-браузеров (Chrome, Safari) 
+}
+  */
+
+.feed li {
+  display: flex;
+  background-color: #212121;
+  width: 90%;
+  padding: 10px;
+  margin: 20px 20px 20px 20px;
+  border-radius: 20px;
+}
+
+.feed p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  text-align: left;
+}
+
+.feed p.role {
+  min-width: 100px;
+}
+
+.source-title {
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 10px 0px;
+  margin: 10px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.source-options {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  margin: 10px;
+  
+}
+
+.source-button {
+  font-size: 16px;
+  /*border: solid 1px rgba(255, 255, 255, 0.5);*/
+  background-color: transparent;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease, border-color 0.3s;
+}
+
+.source-button:hover {
+  background-color: #333333;
+}
+
+.source-button:active {
+  transform: scale(0.98);
+}
+
+.source-button.active {
+  border-color: #ffffff;
+  box-shadow: rgba(194, 255, 247, 0.3) 0 30px 30px,
+    rgba(194, 255, 247, 0.05) 0 -12px 30px,
+    rgba(194, 255, 247, 0.05) 0 4px 6px,
+    rgba(194, 255, 247, 0.05) 0 12px 13px,
+    rgba(194, 255, 247, 0.05) 0 -3px 5px;
+}
+
+.history-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 10px 0px;
+  margin: 10px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.5);
+}
