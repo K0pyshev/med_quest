@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "MedQuest",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

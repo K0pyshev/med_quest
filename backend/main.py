@@ -5,9 +5,13 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain.prompts import ChatPromptTemplate
 from pprint import pprint
+from enum import Enum
 
 
-CHROMA_PATH = "app\chroma\clinrec_chroma"
+CHROMA_CLINREC_PATH = r"chroma\clinrec_chroma"
+CHROMA_MSD_PATH = r"chroma\msd_chroma"
+SEARCH_RESULTS_NUMBER = 2
+
 PROMPT_TEMPLATE = """
 Вы — медицинский ассистент для врачей-специалистов. Вы предоставляете информацию исключительно на основе статей из MSD справочника и клинических рекомендаций по лечению определенных заболеваний. Ваши ответы должны быть точными, основанными на этих источниках, и представлены в понятной и сжатой форме. Если информация отсутствует в указанных источниках, сообщите об этом и избегайте предположений.
 
@@ -20,10 +24,20 @@ PROMPT_TEMPLATE = """
 Вопрос: {question}
 """
 
+class SourceType(str, Enum):
+    clinrec = "clinrec"
+    msd = "msd"
+
 app = FastAPI()
 
-db = Chroma(
-    persist_directory=CHROMA_PATH, 
+clinrecDb = Chroma(
+    persist_directory=CHROMA_CLINREC_PATH, 
+            embedding_function= HuggingFaceEmbeddings(
+       model_name='intfloat/multilingual-e5-large',
+       model_kwargs={'device': 'cuda'})
+)
+msdDb = Chroma(
+    persist_directory=CHROMA_MSD_PATH, 
             embedding_function= HuggingFaceEmbeddings(
        model_name='intfloat/multilingual-e5-large',
        model_kwargs={'device': 'cuda'})
@@ -35,9 +49,14 @@ def read_root():
 
 
 @app.get("/question/")
-def get_question(q: str):
+def get_question(q: str, source: SourceType):
     response = ''
-    results = db.similarity_search_with_relevance_scores(q, k=2)
+    results = []
+    if source is SourceType.clinrec:
+        results = clinrecDb.similarity_search_with_relevance_scores(q, k=SEARCH_RESULTS_NUMBER) 
+    elif source is SourceType.msd:
+            results = msdDb.similarity_search_with_relevance_scores(q, k=2) 
+
     if len(results) == 0 or results[0][1] < 0.7:
         return  {
             "question": q,
