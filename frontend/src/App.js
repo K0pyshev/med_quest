@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ReactComponent as Upward } from './icons/arrow_upward_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm'
+
 
 
 const App = () => {
@@ -52,11 +55,11 @@ const App = () => {
     } catch (error) {
       console.error(error);
       return {
-        prompt:"",
-        source:[]
+        prompt: "",
+        source: []
       }
     }
-}
+  }
   const getMessages = async () => {
     setLoading(true); // Включаем анимацию загрузки
     const context = await getContext()
@@ -146,7 +149,7 @@ const App = () => {
           </button>
         </div>
         <ul className="history">
-        <p className="history-title">История</p>
+          <p className="history-title">История</p>
 
           {uniqueTitles?.map((uniqueTitles, index) => <li key={index} onClick={() => handleClick(uniqueTitles)}>{uniqueTitles}</li>)}
         </ul>
@@ -157,9 +160,11 @@ const App = () => {
       <section className="main">
         {!currentTitle && <h1 className="Name">MedQuest</h1>}
         <ul className="feed">
-          {currentChat?.map((chatMessage, index) => <li key={index}>
+          {currentChat?.map((chatMessage, index) => <li className="feed-item" key={index}>
             <p className="role">{chatMessage.role}</p>
-            <p>{chatMessage.content}</p>
+            <p className='message'>
+              <Markdown remarkPlugins={[remarkGfm]}>{chatMessage.content}</Markdown>
+            </p>
           </li>)}
         </ul>
         <div className="bottom-section">

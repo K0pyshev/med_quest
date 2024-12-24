@@ -7,7 +7,8 @@
 
 html {
   /*scrollbar-color: #494949 rgba(0, 0, 0, 0.01);*/
-}
+}   
+
 
 body {
   margin: 0;
@@ -236,20 +237,24 @@ textarea:focus {
 }
   */
 
-.feed li {
+.feed-item {
   display: flex;
   background-color: #212121;
   width: 90%;
   padding: 10px;
   margin: 20px 20px 20px 20px;
   border-radius: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: left;
+  
 }
 
-.feed p {
-  color: rgba(255, 255, 255, 0.8);
+.message {
+  line-height: 1.5;
   font-size: 16px;
-  text-align: left;
 }
+
+
 
 .feed p.role {
   min-width: 100px;
