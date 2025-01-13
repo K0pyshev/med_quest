@@ -1,5 +1,6 @@
 from typing import Union
-
+import os
+from urllib.request import pathname2url
 from fastapi import FastAPI
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
@@ -7,6 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from pprint import pprint
 from enum import Enum
 
+FILES_HOST="http://localhost:9999/files/"
 
 CHROMA_CLINREC_PATH = r"chroma\clinrec_chroma"
 CHROMA_MSD_PATH = r"chroma\msd_chroma"
@@ -69,10 +71,12 @@ def get_question(q: str, source: SourceType):
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
     prompt = prompt_template.format(context=context_text, question=q)
     sources = {doc.metadata.get("file_name", None) or  doc.metadata.get("source", None) for doc, _score in results}
-
+    sources_list = [{'name':os.path.splitext(os.path.basename(source))[0],'link':f'{FILES_HOST}{pathname2url(source)}'} for source in sources]
 
     return {
             "question": q,
             "prompt": prompt,
-            "sources": list(sources)
+            "sources": sources_list
             }
+
+    

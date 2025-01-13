@@ -72,6 +72,8 @@ nav {
 .main {
   height: 100vh;
   width: 100%;
+  flex: 1;        /* растягиваемся на всё, что осталось */
+  min-width: 0;   /* убираем потенциальные горизонтальные скроллы */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -79,8 +81,79 @@ nav {
 }
 
 .Name {
+  /* ОБЯЗАТЕЛЬНО СДЕЛАТЬ АДАПТИВ */
   font-size: 30px;
+  padding: 0px 40px 0px 0px;
+  
+  /* Цвет текста по умолчанию */
+  color: #868686;
+  
+  /* Остальной базовый стиль */
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: "Poppins", sans-serif;
+  transition: 0.3s; /* Можно добавить плавность перехода */
 }
+
+
+.Name:hover {
+  background: linear-gradient(to right, #9f9f9f 0, #fff 10%, #868686 20%);
+  background-position: 0;
+  background-size: 200% auto; /* при желании, чтобы градиент растягивался */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; /* делаем сам текст прозрачным, виден градиент */
+  
+  animation: shine 3s infinite linear;
+  animation-fill-mode: forwards;
+}
+
+/* Кейфреймы анимации */
+@-moz-keyframes shine {
+  0% {
+    background-position: 0;
+  }
+  60% {
+    background-position: 180px;
+  }
+  100% {
+    background-position: 180px;
+  }
+}
+@-webkit-keyframes shine {
+  0% {
+    background-position: 0;
+  }
+  60% {
+    background-position: 180px;
+  }
+  100% {
+    background-position: 180px;
+  }
+}
+@-o-keyframes shine {
+  0% {
+    background-position: 0;
+  }
+  60% {
+    background-position: 180px;
+  }
+  100% {
+    background-position: 180px;
+  }
+}
+@keyframes shine {
+  0% {
+    background-position: 0;
+  }
+  60% {
+    background-position: 180px;
+  }
+  100% {
+    background-position: 180px;
+  }
+}
+
 
 .info {
   color: rgba(255, 255, 255, 0.5);
@@ -91,7 +164,7 @@ nav {
 .input-container {
   position: relative;
   width: 100%;
-  max-width: 650px;
+  max-width: 700px;
   display: flex;
   align-items: flex-end;
   gap: 10px;
@@ -203,12 +276,14 @@ textarea:focus {
 }
 
 .feed {
-  overflow-y: auto; /* Включаем вертикальную прокрутку */
-  overflow-x: hidden; /* Убираем горизонтальную прокрутку */
-  width: 1100px; /* Ширина вашего контейнера */
-  padding: 0; /* Отступы внутри контейнера */
-  border-radius: 20px; /* Скругление углов */
-  position: relative; /* Относительное позиционирование */
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;         
+  max-width: 1200px; 
+  max-height: 930px; 
+  padding: 0;
+  border-radius: 20px;
+  position: relative;
 }
 
 .feed::-webkit-scrollbar {
@@ -237,17 +312,47 @@ textarea:focus {
 }
   */
 
-.feed-item {
-  display: flex;
-  background-color: #212121;
-  width: 90%;
-  padding: 10px;
-  margin: 20px 20px 20px 20px;
-  border-radius: 20px;
-  color: rgba(255, 255, 255, 0.8);
-  text-align: left;
+  .feed-item {
+    display: flex;
+    background-color: #212121;
+    width: 90%;
+    padding: 10px;
+    margin: 20px 20px 20px 20px;
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: left;
   
-}
+    /* Начальное состояние */
+    opacity: 0;
+    transform: translateY(15px) scale(0.97);
+    animation: feed-item-appear 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+  
+  .feed-item:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .feed-item:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  .feed-item:nth-child(3) {
+    animation-delay: 0.15s;
+  }
+  .feed-item:nth-child(4) {
+    animation-delay: 0.2s;
+  }
+  
+  @keyframes feed-item-appear {
+    0% {
+      opacity: 0;
+      transform: translateY(15px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  
 
 .message {
   line-height: 1.5;
@@ -272,11 +377,12 @@ textarea:focus {
 }
 
 .source-options {
+  width: 200px;
+  height: auto;
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding: 10px 0px 0px 20px;
   margin: 10px;
-  
 }
 
 .source-button {
@@ -288,6 +394,7 @@ textarea:focus {
   margin: 10px 0;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s ease, border-color 0.3s;
+  transition: box-shadow 0.5s ease;
 }
 
 .source-button:hover {
@@ -316,3 +423,22 @@ textarea:focus {
   font-size: 16px;
   color: rgba(255, 255, 255, 0.5);
 }
+
+.mainElemets {
+  display: flex;
+  flex: 1; 
+  flex-direction: column; /* колонки слева направо */
+  width: 100%;         /* можно оставить, можно убрать, т.к. flex:1 важнее */
+}
+
+.main-header {
+  width: 100%;
+  height: 170px;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline; /* Выравнивание по вертикали */
+  justify-content: space-between; /* Распределяет элементы по краям */
+}
+
+
+

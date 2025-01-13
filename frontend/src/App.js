@@ -75,9 +75,13 @@ const App = () => {
 
     try {
       const response = await fetch('http://localhost:8000/completions', options);
-      const data = await response.json();
+      let data = await response.json();
+      const sourcesString = ' \n\n**Источники:**\n'+ context.source.map(s => `* [${s.name}](${s.link})`).join('\n* ')
+
       console.log(data);
+      data.choices[0].message.content+=sourcesString
       setMessage(data.choices[0].message);
+      console.log(data.choices[0].message);
     } catch (error) {
       console.error(error);
     } finally {
@@ -133,21 +137,6 @@ const App = () => {
     <div className="App">
       <section className="side-bar">
         <button onClick={createNewChat}>Новый чат</button>
-        <p className="source-title">Источник поиска</p>
-        <div className="source-options">
-          <button
-            className={`source-button ${source === 'msd' ? 'active' : ''}`}
-            onClick={() => handleSourceClick('msd')}
-          >
-            MSD справочник
-          </button>
-          <button
-            className={`source-button ${source === 'clinrec' ? 'active' : ''}`}
-            onClick={() => handleSourceClick('clinrec')}
-          >
-            Клинические рекомендации
-          </button>
-        </div>
         <ul className="history">
           <p className="history-title">История</p>
 
@@ -157,49 +146,68 @@ const App = () => {
           <p>Посмотреть планы</p>
         </nav>
       </section>
-      <section className="main">
-        {!currentTitle && <h1 className="Name">MedQuest</h1>}
-        <ul className="feed">
-          {currentChat?.map((chatMessage, index) => <li className="feed-item" key={index}>
-            <p className="role">{chatMessage.role}</p>
-            <p className='message'>
-              <Markdown remarkPlugins={[remarkGfm]}>{chatMessage.content}</Markdown>
-            </p>
-          </li>)}
-        </ul>
-        <div className="bottom-section">
-          <div className="input-container">
-            <textarea
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              ref={textareaRef}
-              placeholder="Сообщение для MedQuest"
-              rows={1}
-              onInput={handleInput}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault(); // Предотвращаем создание новой строки
-                  getMessages(); // Отправляем запрос
-                }
-              }}
-              style={{
-                minHeight: '50px',
-                maxHeight: '150px',
-              }}
-            />
-            <div
-              id="submit"
-              onClick={getMessages} // Используем getMessages напрямую
-              className={loading ? 'animate' : ''}
+      <div className='mainElemets'>
+        <div className='main-header'>
+          <div className="source-options">
+            <button
+              className={`source-button ${source === 'msd' ? 'active' : ''}`}
+              onClick={() => handleSourceClick('msd')}
             >
-              <Upward />
-            </div>
+              MSD справочник
+            </button>
+            <button
+              className={`source-button ${source === 'clinrec' ? 'active' : ''}`}
+              onClick={() => handleSourceClick('clinrec')}
+            >
+              Клинические рекомендации
+            </button>
           </div>
-          <p className="info">
-            MedQuest может допускать ошибки. Рекомендуем проверять важную информацию
-          </p>
-        </div>
-      </section>
+          <h1 className="Name">MedQuest</h1>
+          </div>
+        <section className="main">
+          
+          <ul className="feed">
+            {currentChat?.map((chatMessage, index) => <li className="feed-item" key={index}>
+              <p className="role">{chatMessage.role}</p>
+              <p className='message'>
+                <Markdown remarkPlugins={[remarkGfm]}>{chatMessage.content}</Markdown>
+              </p>
+            </li>)}
+          </ul>
+          <div className="bottom-section">
+            <div className="input-container">
+              <textarea
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                ref={textareaRef}
+                placeholder="Сообщение для MedQuest"
+                rows={1}
+                onInput={handleInput}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // Предотвращаем создание новой строки
+                    getMessages(); // Отправляем запрос
+                  }
+                }}
+                style={{
+                  minHeight: '50px',
+                  maxHeight: '150px',
+                }}
+              />
+              <div
+                id="submit"
+                onClick={getMessages} // Используем getMessages напрямую
+                className={loading ? 'animate' : ''}
+              >
+                <Upward />
+              </div>
+            </div>
+            <p className="info">
+              MedQuest может допускать ошибки. Рекомендуем проверять важную информацию
+            </p>
+          </div>
+        </section>
+      </div>
     </div>
   );
 };
