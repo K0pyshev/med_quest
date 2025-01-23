@@ -440,5 +440,9 @@ textarea:focus {
   justify-content: space-between; /* Распределяет элементы по краям */
 }
 
-
+.message img {
+  width: 25px;
+  height: 25px;
+  vertical-align: bottom;
+}
 

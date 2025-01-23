@@ -61,8 +61,19 @@ const App = () => {
     }
   }
   const getMessages = async () => {
+    if (!value){return}
     setLoading(true); // Включаем анимацию загрузки
     const context = await getContext()
+    if (context.source.length === 0) {
+      setMessage(
+        {
+          "role": "assistant",
+          "content": "Не удалось найти информацию по вашему вопросу."
+        }
+      )
+      setLoading(false)
+      return
+    }
     const options = {
       method: "POST",
       body: JSON.stringify({
@@ -76,10 +87,10 @@ const App = () => {
     try {
       const response = await fetch('http://localhost:8000/completions', options);
       let data = await response.json();
-      const sourcesString = ' \n\n**Источники:**\n'+ context.source.map(s => `* [${s.name}](${s.link})`).join('\n* ')
-
+      const sourcesString = ' \n\n**Источники:**\n\n'+ context.source.map(s => `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${s.name}](${s.link})`).join('\n\n')
+      console.log(sourcesString)
       console.log(data);
-      data.choices[0].message.content+=sourcesString
+      data.choices[0].message.content += sourcesString
       setMessage(data.choices[0].message);
       console.log(data.choices[0].message);
     } catch (error) {
@@ -163,12 +174,12 @@ const App = () => {
             </button>
           </div>
           <h1 className="Name">MedQuest</h1>
-          </div>
+        </div>
         <section className="main">
-          
+
           <ul className="feed">
             {currentChat?.map((chatMessage, index) => <li className="feed-item" key={index}>
-              <p className="role">{chatMessage.role}</p>
+              <p className="role">{chatMessage.role == 'assistant' ? 'MedQuest' : 'User'}</p>
               <p className='message'>
                 <Markdown remarkPlugins={[remarkGfm]}>{chatMessage.content}</Markdown>
               </p>
