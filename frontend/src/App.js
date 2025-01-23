@@ -179,7 +179,7 @@ const App = () => {
 
           <ul className="feed">
             {currentChat?.map((chatMessage, index) => <li className="feed-item" key={index}>
-              <p className="role">{chatMessage.role == 'assistant' ? 'MedQuest' : 'User'}</p>
+              <p className="role">{chatMessage.role === 'assistant' ? 'MedQuest' : 'User'}</p>
               <p className='message'>
                 <Markdown remarkPlugins={[remarkGfm]}>{chatMessage.content}</Markdown>
               </p>
