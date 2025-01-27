@@ -10,9 +10,29 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const textareaRef = useRef(null);
   const [value, setValue] = useState("");
-  const [previousChats, setPreviousChats] = useState([])
-  const [currentTitle, setCurrentTitle] = useState(null)
-  const [source, setSource] = useState("msd")
+  const [previousChats, setPreviousChats] = useState(() => {
+    const saved = localStorage.getItem("previousChats");
+    const initialValue = JSON.parse(saved);
+    return initialValue || [];
+  });
+
+  const [currentTitle, setCurrentTitle] = useState(() => {
+    const saved = localStorage.getItem("currentTitle");
+    const initialValue = JSON.parse(saved);
+    return initialValue || null;
+  });
+
+  const [source, setSource] = useState(() => {
+      if (!currentTitle || !previousChats){
+        return "msd";
+      }
+      const chats = previousChats.filter(previousChats => previousChats.title === currentTitle)
+      const currentSource = chats && chats.slice(-1)[0] ? chats.slice(-1)[0].source : null
+      if (currentSource) {
+        return currentSource
+      }
+    return "msd";
+  });
 
   const handleSourceClick = (src) => {
     setSource(src);
@@ -61,7 +81,7 @@ const App = () => {
     }
   }
   const getMessages = async () => {
-    if (!value){return}
+    if (!value) { return }
     setLoading(true); // Включаем анимацию загрузки
     const context = await getContext()
     if (context.source.length === 0) {
@@ -87,7 +107,7 @@ const App = () => {
     try {
       const response = await fetch('http://localhost:8000/completions', options);
       let data = await response.json();
-      const sourcesString = ' \n\n**Источники:**\n\n'+ context.source.map(s => `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${s.name}](${s.link})`).join('\n\n')
+      const sourcesString = ' \n\n**Источники:**\n\n' + context.source.map(s => `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${s.name}](${s.link})`).join('\n\n')
       console.log(sourcesString)
       console.log(data);
       data.choices[0].message.content += sourcesString
@@ -116,21 +136,36 @@ const App = () => {
   };
 
   useEffect(() => {
-    console.log(currentTitle, value, message)
+    localStorage.setItem("previousChats", JSON.stringify(previousChats));
+    localStorage.setItem("currentTitle", JSON.stringify(currentTitle));
+  }, [previousChats, currentTitle])
+
+  useEffect(() => {
+    const chats = previousChats.filter(previousChats => previousChats.title === currentTitle)
+    const currentSource = chats && chats.slice(-1)[0] ? chats.slice(-1)[0].source : null
+    if (currentSource) {
+      setSource(currentSource)
+    }
+  }, [currentTitle])
+
+  useEffect(() => {
     if (!currentTitle && value && message) {
       setCurrentTitle(value)
     }
     if (currentTitle && value && message) {
+      console.log(currentTitle, value, message, source)
       setPreviousChats(prevChats => (
-        [...prevChats,
+        [...prevChats, 
         {
           title: currentTitle,
           role: "user",
+          source: source,
           content: value
         },
         {
           title: currentTitle,
           role: message.role,
+          source: source,
           content: message.content
         }
         ]
@@ -138,7 +173,6 @@ const App = () => {
       setValue("")
     }
   }, [message, currentTitle])
-
 
   const currentChat = previousChats.filter(previousChats => previousChats.title === currentTitle)
   const uniqueTitles = Array.from(new Set(previousChats.map(previousChats => previousChats.title)))
