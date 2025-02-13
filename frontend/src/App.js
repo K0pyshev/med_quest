@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ReactComponent as Upward } from './icons/arrow_upward_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { generateText } from "ai";
+
+const LM_STUDIO_HOST = 'http://127.0.0.1:1234'
+const LM_STUDIO_DEFAULT_MODEL = 'meta-llama-3.1-8b-instruct'
+const API_HOST = 'http://127.0.0.1:8888'
 
 // ------------------ Sidebar ------------------
 const Sidebar = ({ uniqueTitles, onSelectTitle, onNewChat }) => {
@@ -160,15 +166,12 @@ const App = () => {
 
   // Запрос контекста на сервере
   const getContext = async () => {
-    const options = {
-      method: 'POST',
-      body: JSON.stringify({ message: value, source }),
-      headers: { 'Content-Type': 'application/json' },
-    };
-
     try {
-      const response = await fetch('http://localhost:8000/context', options);
-      const data = await response.json();
+      const response = await fetch(`${API_HOST}/question?` + new URLSearchParams({
+        q: value,
+        source: source,
+      }).toString())
+      const data = await response.json()
       return {
         prompt: data.prompt,
         sources: data.sources,
@@ -195,16 +198,20 @@ const App = () => {
       return;
     }
 
-    const completionOptions = {
-      method: 'POST',
-      body: JSON.stringify({ message: context.prompt }),
-      headers: { 'Content-Type': 'application/json' },
-    };
-
     try {
-      const response = await fetch('http://localhost:8000/completions', completionOptions);
-      const data = await response.json();
+      const lmstudio = createOpenAICompatible({
+        baseURL: `${LM_STUDIO_HOST}/v1`,
+      });
+      const { text } = await generateText({
+        model: lmstudio(LM_STUDIO_DEFAULT_MODEL),
+        prompt: context.prompt,
+      });
 
+      const message = {
+        role: 'assistant',
+        content: text,
+      };
+      console.log(context.sources)
       // Формируем строку с источниками (ссылки)
       const sourcesString =
         '\n\n**Источники:**\n\n' +
@@ -213,8 +220,8 @@ const App = () => {
           .join('\n\n');
 
       // Доклеиваем к ответу
-      data.choices[0].message.content += sourcesString;
-      setMessage(data.choices[0].message);
+      message.content += sourcesString;
+      setMessage(message);
     } catch (error) {
       console.error(error);
     } finally {

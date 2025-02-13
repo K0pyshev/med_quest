@@ -7,3 +7,16 @@ services:
       - ./nginx/files:/var/www/files
     ports:
       - 9999:9999
+  back:
+    build: ./backend
+    ports:
+     - "8888:8000"
+    volumes:
+     - ./backend:/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # alternatively, use `count: all` for all GPUs
+              capabilities: [gpu]
