@@ -1,13 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ReactComponent as Upward } from './icons/arrow_upward_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { streamText } from 'ai';
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import { generateText } from "ai";
 
-const LM_STUDIO_HOST = 'http://127.0.0.1:1234'
-const LM_STUDIO_DEFAULT_MODEL = 'meta-llama-3.1-8b-instruct'
-const API_HOST = 'http://127.0.0.1:8888'
+import { Message } from './Message'; // <-- наш компонент с логикой стриминга
+
+const LM_STUDIO_HOST = 'http://127.0.0.1:1234';
+const LM_STUDIO_DEFAULT_MODEL = 'meta-llama-3.1-8b-instruct';
+const API_HOST = 'http://127.0.0.1:8888';
 
 // ------------------ Sidebar ------------------
 const Sidebar = ({ uniqueTitles, onSelectTitle, onNewChat }) => {
@@ -56,13 +58,14 @@ const Header = ({ source, onSourceChange }) => {
 const ChatFeed = ({ currentChat }) => {
   return (
     <ul className="feed">
-      {currentChat?.map((chatMessage, index) => (
-        <li className="feed-item" key={index}>
-          <p className="role">{chatMessage.role === 'assistant' ? 'MedQuest' : 'User'}</p>
-          <p className="message">
-            <Markdown remarkPlugins={[remarkGfm]}>{chatMessage.content}</Markdown>
-          </p>
-        </li>
+      {currentChat?.map((msg, index) => (
+        <Message
+          key={index}
+          role={msg.role}
+          content={msg.content}
+          stream={msg.stream}
+          sourcesString={msg.sourcesString}
+        />
       ))}
     </ul>
   );
@@ -70,25 +73,21 @@ const ChatFeed = ({ currentChat }) => {
 
 // ------------------ MessageInput ------------------
 const MessageInput = ({ value, onChange, onSend, loading }) => {
-  const textareaRef = useRef(null);
-
-  // Автоматическое изменение высоты текстового поля
-  const handleInput = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    textarea.style.height = 'auto'; // сброс высоты
+  // Функция для авто-увеличения высоты текстового поля
+  const handleInput = (e) => {
+    const textarea = e.target;
+    textarea.style.height = 'auto';
     const lines = textarea.value.split('\n');
     const lineCount = lines.length;
-    const maxHeight = 150; // максимум пикселей по высоте
-    const lineHeight = 24; // примерная высота строки
+    const maxHeight = 150;
+    const lineHeight = 24;
     const minHeight = 50;
 
     const newHeight = Math.min(lineCount * lineHeight, maxHeight);
     textarea.style.height = `${Math.max(newHeight, minHeight)}px`;
   };
 
-  // Отправка сообщения при нажатии Enter (без Shift)
+  // Отправка при Enter (без Shift)
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -102,7 +101,6 @@ const MessageInput = ({ value, onChange, onSend, loading }) => {
         <textarea
           value={value}
           onChange={onChange}
-          ref={textareaRef}
           placeholder="Сообщение для MedQuest"
           rows={1}
           onInput={handleInput}
@@ -125,19 +123,22 @@ const MessageInput = ({ value, onChange, onSend, loading }) => {
 
 // ------------------ Main App ------------------
 const App = () => {
-  const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [value, setValue] = useState('');
+
+  // Массив всех сообщений (всех чатов)
   const [previousChats, setPreviousChats] = useState(() => {
     const saved = localStorage.getItem('previousChats');
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Текущий чат (заголовок)
   const [currentTitle, setCurrentTitle] = useState(() => {
     const saved = localStorage.getItem('currentTitle');
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Источник (msd/clinrec)
+  // Текущий источник (msd или clinrec)
   const [source, setSource] = useState(() => {
     if (!currentTitle || !previousChats) return 'msd';
     const chats = previousChats.filter((ch) => ch.title === currentTitle);
@@ -152,26 +153,24 @@ const App = () => {
 
   // Создать новый чат
   const createNewChat = () => {
-    setMessage(null);
     setValue('');
     setCurrentTitle(null);
   };
 
-  // Переключение между чатами в истории
+  // Переключить на существующий чат в истории
   const handleClickTitle = (title) => {
-    setCurrentTitle(title);
-    setMessage(null);
     setValue('');
+    setCurrentTitle(title);
   };
 
-  // Запрос контекста на сервере
+  // Запрос контекста
   const getContext = async () => {
     try {
-      const response = await fetch(`${API_HOST}/question?` + new URLSearchParams({
-        q: value,
-        source: source,
-      }).toString())
-      const data = await response.json()
+      const response = await fetch(
+        `${API_HOST}/question?` +
+        new URLSearchParams({ q: value, source }).toString()
+      );
+      const data = await response.json();
       return {
         prompt: data.prompt,
         sources: data.sources,
@@ -182,60 +181,113 @@ const App = () => {
     }
   };
 
-  // Запрос ответа на основе контекста
+  // Отправка сообщения
   const getMessages = async () => {
-    if (!value) return;
+    if (!value.trim()) return;
     setLoading(true);
 
-    // Сначала получаем контекст
+    // Если нет текущего заголовка — создаём его
+    if (!currentTitle) {
+      setCurrentTitle(value);
+    }
+
+    // Добавляем в историю сообщение от пользователя
+    setPreviousChats((prev) => [
+      ...prev,
+      {
+        title: currentTitle || value,
+        role: 'user',
+        source,
+        content: value,
+      },
+    ]);
+    setValue('');
+
+    // Получаем контекст для поиска
     const context = await getContext();
-    if (!context.sources?.length) {
-      setMessage({
-        role: 'assistant',
-        content: 'Не удалось найти информацию по вашему вопросу.',
-      });
+    const haveSources = context.sources && context.sources.length > 0;
+
+    // Если источников нет — ответим коротко и выйдем
+    if (!haveSources) {
+      setPreviousChats((prev) => [
+        ...prev,
+        {
+          title: currentTitle || value,
+          role: 'assistant',
+          source,
+          content: 'Не удалось найти информацию по вашему вопросу.',
+        },
+      ]);
       setLoading(false);
       return;
     }
+
+    const sourcesString =
+      '\n\n**Источники:**\n\n' +
+      context.sources
+        .map(
+          (src) =>
+            `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${src.name}](${src.link})`
+        )
+        .join('\n\n');
+
 
     try {
       const lmstudio = createOpenAICompatible({
         baseURL: `${LM_STUDIO_HOST}/v1`,
       });
-      const { text } = await generateText({
+
+      // Запускаем стриминг
+      const { textStream } = await streamText({
         model: lmstudio(LM_STUDIO_DEFAULT_MODEL),
         prompt: context.prompt,
+        onFinish: ({ text }) => {
+          // Когда стрим полностью закончится — снимаем флаг и
+          // обновляем последнее «assistant»-сообщение, добавив итоговый контент:
+          setLoading(false);
+          setPreviousChats((prev) => {
+            if (!prev.length) return prev;
+            const updated = [...prev];
+            // Находим последнее добавленное ассистентом сообщение
+            // (или просто берём самый конец, если уверены, что он точно там):
+            const lastIndex = updated.length - 1;
+            // Обновляем его, добавляя получившийся контент:
+            updated[lastIndex] = {
+              ...updated[lastIndex],
+              content: text+sourcesString,
+            };
+            return updated;
+          });
+        },
       });
 
-      const message = {
-        role: 'assistant',
-        content: text,
-      };
-      console.log(context.sources)
-      // Формируем строку с источниками (ссылки)
-      const sourcesString =
-        '\n\n**Источники:**\n\n' +
-        context.sources
-          .map((src) => `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${src.name}](${src.link})`)
-          .join('\n\n');
-
-      // Доклеиваем к ответу
-      message.content += sourcesString;
-      setMessage(message);
-    } catch (error) {
-      console.error(error);
-    } finally {
+      // Формируем строку с источниками
+      // Добавляем «assistant»-сообщение со стримом (без content),
+      // контент у него дополнится, когда сработает onFinish.
+      setPreviousChats((prev) => [
+        ...prev,
+        {
+          title: currentTitle || value,
+          role: 'assistant',
+          source,
+          stream: textStream,
+          sourcesString,
+          // Пока content нет (он "будет" стримиться)
+        },
+      ]);
+    } catch (err) {
+      console.error(err);
       setLoading(false);
     }
   };
 
-  // Синхронизация в localStorage
+  // Синхронизируем в localStorage
   useEffect(() => {
     localStorage.setItem('previousChats', JSON.stringify(previousChats));
     localStorage.setItem('currentTitle', JSON.stringify(currentTitle));
   }, [previousChats, currentTitle]);
 
-  // Обновляем source при смене чата
+  // При смене чата — восстанавливаем source (если есть)
   useEffect(() => {
     const chats = previousChats.filter((ch) => ch.title === currentTitle);
     const currentSource = chats?.slice(-1)[0]?.source;
@@ -244,35 +296,10 @@ const App = () => {
     }
   }, [currentTitle, previousChats]);
 
-  // Сохраняем новый (или существующий) чат в историю
-  useEffect(() => {
-    if (!currentTitle && value && message) {
-      // если заголовка нет, создаём новый
-      setCurrentTitle(value);
-    }
-    if (currentTitle && value && message) {
-      setPreviousChats((prevChats) => [
-        ...prevChats,
-        {
-          title: currentTitle,
-          role: 'user',
-          source: source,
-          content: value,
-        },
-        {
-          title: currentTitle,
-          role: message.role,
-          source: source,
-          content: message.content,
-        },
-      ]);
-      setValue('');
-    }
-  }, [message, currentTitle, value, source]);
-
-  // Фильтруем сообщения текущего чата
+  // Сообщения только для выбранного чата
   const currentChat = previousChats.filter((ch) => ch.title === currentTitle);
-  // Собираем уникальные заголовки (история)
+
+  // Уникальные заголовки
   const uniqueTitles = Array.from(new Set(previousChats.map((ch) => ch.title)));
 
   return (
@@ -284,7 +311,6 @@ const App = () => {
       />
       <div className="mainElemets">
         <Header source={source} onSourceChange={handleSourceClick} />
-
         <section className="main">
           <ChatFeed currentChat={currentChat} />
           <MessageInput

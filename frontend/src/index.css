@@ -67,6 +67,10 @@ nav {
   list-style-type: none;
   padding: 15px 0;
   cursor: pointer;
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+  overflow: hidden;
+  width: 100%;
 }
 
 .main {
