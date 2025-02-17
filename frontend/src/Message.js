@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 // Компонент для рендеринга одного сообщения.
 // Если role="assistant" и есть stream => читаем поток и отображаем ответ по частям.
@@ -45,7 +46,7 @@ export function Message({ role, content, stream, sourcesString, handleError }) {
       <p className="role">{role === 'assistant' ? 'MedQuest' : 'User'}</p>
 
       <div className="message">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
         {role === 'assistant' && showSources && sourcesString && (
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {sourcesString}

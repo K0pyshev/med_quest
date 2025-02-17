@@ -17,15 +17,7 @@ CHROMA_MSD_PATH = r"chroma/msd_chroma"
 SEARCH_RESULTS_NUMBER = 2
 
 PROMPT_TEMPLATE = """
-Вы — медицинский ассистент для врачей-специалистов. Вы предоставляете информацию исключительно на основе статей из MSD справочника и клинических рекомендаций по лечению определенных заболеваний. Ваши ответы должны быть точными, основанными на этих источниках, и представлены в понятной и сжатой форме. Если информация отсутствует в указанных источниках, сообщите об этом и избегайте предположений.
-
-Ответь на вопрос базируясь только на этом контексте: 
-
 {context}
-
----
-
-Вопрос: {question}
 """
 
 class SourceType(str, Enum):
@@ -91,7 +83,7 @@ def get_question(q: str, source: SourceType):
     pprint(results)
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-    prompt = prompt_template.format(context=context_text, question=q)
+    prompt = prompt_template.format(context=context_text)
     sources = {doc.metadata.get("file_name", None) or  doc.metadata.get("source", None) for doc, _score in results}
     sources_list = [{'name':os.path.splitext(os.path.basename(windows_to_linux_path(source)))[0],'link':f'{FILES_HOST}{pathname2url(windows_to_linux_path(source))}'} for source in sources]
 

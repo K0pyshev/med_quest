@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ReactComponent as Upward } from './icons/arrow_upward_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { streamText } from 'ai';
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
@@ -191,21 +189,24 @@ const App = () => {
       setCurrentTitle(value);
     }
 
-    // Добавляем в историю сообщение от пользователя
-    setPreviousChats((prev) => [
-      ...prev,
-      {
-        title: currentTitle || value,
-        role: 'user',
-        source,
-        content: value,
-      },
-    ]);
-    setValue('');
-
     // Получаем контекст для поиска
     const context = await getContext();
     const haveSources = context.sources && context.sources.length > 0;
+
+    let currentMessage =
+    {
+      title: currentTitle || value,
+      role: 'user',
+      source,
+      content: `<!-- Контекст:${context.prompt.trim()}\n\n Вопрос: -->\n\n${value}`,
+    }
+
+      // Добавляем в историю сообщение от пользователя
+      setPreviousChats((prev) => [
+        ...prev,
+        currentMessage
+      ]);
+    setValue('');
 
     // Если источников нет — ответим коротко и выйдем
     if (!haveSources) {
@@ -240,7 +241,7 @@ const App = () => {
       // Запускаем стриминг
       const { textStream } = await streamText({
         model: lmstudio(LM_STUDIO_DEFAULT_MODEL),
-        prompt: context.prompt,
+        messages: [currentMessage],
         onFinish: ({ text }) => {
           // Когда стрим полностью закончится — снимаем флаг и
           // обновляем последнее «assistant»-сообщение, добавив итоговый контент:
@@ -254,7 +255,7 @@ const App = () => {
             // Обновляем его, добавляя получившийся контент:
             updated[lastIndex] = {
               ...updated[lastIndex],
-              content: text+sourcesString,
+              content: text + sourcesString,
             };
             return updated;
           });
