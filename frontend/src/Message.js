@@ -8,7 +8,14 @@ import rehypeRaw from 'rehype-raw';
 // Компонент для рендеринга одного сообщения.
 // Если role="assistant" и есть stream => читаем поток и отображаем ответ по частям.
 // Ссылки (sourcesString) показываются только когда стрим завершён.
-export function Message({ role, content, stream, sourcesString, handleError }) {
+export function Message({
+  role,
+  content,
+  stream,
+  sourcesString,
+  handleError,
+  feedRef, // <-- принимаем ref из ChatFeed
+}) {
   // text — это «накапливаемый» ответ ассистента, либо готовый текст.
   const [text, setText] = useState(content || '');
   // showSources — изначально false, станет true, когда поток закончится.
@@ -20,22 +27,40 @@ export function Message({ role, content, stream, sourcesString, handleError }) {
 
     const readStream = async () => {
       try {
+        // Если поток уже залочен (locked), пропускаем
         if (stream.locked) return;
+
+        // for-await-of позволяет построчно считывать поток
         for await (const chunk of stream) {
-          setText((prev) => prev + chunk);
+          // Прибавляем каждый кусок текста к стейту
+          setText((prev) => {
+            const updated = prev + chunk;
+
+            // После обновления текста делаем автоскролл (на следующем цикле)
+            setTimeout(() => {
+              if (feedRef?.current) {
+                feedRef.current.scrollTo({
+                  top: feedRef.current.scrollHeight,
+                  behavior: 'smooth',
+                });
+              }
+            }, 0);
+
+            return updated;
+          });
         }
-        // Когда цикл for await закончится, стрим завершён
+        // Когда цикл завершился, стрим закончился => показываем источники
         setShowSources(true);
       } catch (err) {
         if (handleError) handleError(err);
       }
     };
+
     readStream();
-  }, [role, stream, handleError]);
+  }, [role, stream, handleError, feedRef]);
 
   useEffect(() => {
-    // Если это ассистент, но нет стрима (например, старое сообщение) —
-    // показываем ссылки сразу (т.к. нет постепенного вывода).
+    // Если это ассистент и нет стрима, значит сообщение уже готово => покажем источники
     if (role === 'assistant' && !stream) {
       setShowSources(true);
     }
@@ -46,12 +71,18 @@ export function Message({ role, content, stream, sourcesString, handleError }) {
       <p className="role">{role === 'assistant' ? 'MedQuest' : 'User'}</p>
 
       <div className="message">
-        <ReactMarkdown rehypePlugins={[rehypeRaw]} remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        <ReactMarkdown
+          rehypePlugins={[rehypeRaw]}
+          remarkPlugins={[remarkGfm]}
+        >
+          {text}
+        </ReactMarkdown>
+
         {role === 'assistant' && showSources && sourcesString && (
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {sourcesString}
           </ReactMarkdown>
-      )}
+        )}
       </div>
     </li>
   );
@@ -63,4 +94,5 @@ Message.propTypes = {
   stream: PropTypes.object,        // поток (ReadableStream)
   sourcesString: PropTypes.string, // ссылки
   handleError: PropTypes.func,
+  feedRef: PropTypes.object,       // ссылка на контейнер (ChatFeed)
 };

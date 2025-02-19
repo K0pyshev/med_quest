@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ReactComponent as Upward } from './icons/arrow_upward_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg';
 import { streamText } from 'ai';
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
@@ -6,7 +6,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { Message } from './Message'; // <-- наш компонент с логикой стриминга
 
 const LM_STUDIO_HOST = 'http://127.0.0.1:1234';
-const LM_STUDIO_DEFAULT_MODEL = 'meta-llama-3.1-8b-instruct';
+const LM_STUDIO_DEFAULT_MODEL = 'llama-3.2-1b-instruct';
 const API_HOST = 'http://127.0.0.1:8888';
 
 // ------------------ Sidebar ------------------
@@ -53,21 +53,32 @@ const Header = ({ source, onSourceChange }) => {
 };
 
 // ------------------ ChatFeed ------------------
+
 const ChatFeed = ({ currentChat }) => {
+  const feedRef = useRef(null);
+
+  useEffect(() => {
+    // При любом новом сообщении сразу скроллимся вниз (если нужно).
+    if (!feedRef.current) return;
+    feedRef.current.scrollTo({
+      top: feedRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [currentChat]);
+
   return (
-    <ul className="feed">
+    <ul className="feed" ref={feedRef}>
       {currentChat?.map((msg, index) => (
         <Message
           key={index}
-          role={msg.role}
-          content={msg.content}
-          stream={msg.stream}
-          sourcesString={msg.sourcesString}
+          {...msg}
+          feedRef={feedRef}  // <-- ВАЖНО: передаем ref в Message
         />
       ))}
     </ul>
   );
-};
+}
+
 
 // ------------------ MessageInput ------------------
 const MessageInput = ({ value, onChange, onSend, loading }) => {
@@ -183,37 +194,37 @@ const App = () => {
   const getMessages = async () => {
     if (!value.trim()) return;
     setLoading(true);
-
-    // Если нет текущего заголовка — создаём его
-    if (!currentTitle) {
-      setCurrentTitle(value);
+  
+    // Если нет текущего заголовка — создаём его (будущий title)
+    let newTitle = currentTitle;
+    if (!newTitle) {
+      newTitle = value;
+      setCurrentTitle(newTitle);
     }
-
-    // Получаем контекст для поиска
+  
+    // 1. Получаем «контекст» из API (например, с помощью getContext)
     const context = await getContext();
     const haveSources = context.sources && context.sources.length > 0;
-
-    let currentMessage =
-    {
-      title: currentTitle || value,
+  
+    // 2. Формируем новое сообщение пользователя
+    const userMessage = {
+      title: newTitle,
       role: 'user',
       source,
       content: `<!-- Контекст:${context.prompt.trim()}\n\n Вопрос: -->\n\n${value}`,
-    }
-
-      // Добавляем в историю сообщение от пользователя
-      setPreviousChats((prev) => [
-        ...prev,
-        currentMessage
-      ]);
+    };
+  
+    // Сохраняем это новое сообщение в history
+    setPreviousChats((prev) => [...prev, userMessage]);
+    // Очищаем input
     setValue('');
-
-    // Если источников нет — ответим коротко и выйдем
+  
+    // Если источников нет — можно вывести короткий ответ и завершить
     if (!haveSources) {
       setPreviousChats((prev) => [
         ...prev,
         {
-          title: currentTitle || value,
+          title: newTitle,
           role: 'assistant',
           source,
           content: 'Не удалось найти информацию по вашему вопросу.',
@@ -222,7 +233,24 @@ const App = () => {
       setLoading(false);
       return;
     }
-
+  
+    // 3. Формируем массив «всех реплик» для отправки в модель
+    //    Берём все сообщения из текущего чата + новое сообщение пользователя
+    //    (учитывая, что setPreviousChats — асинхронный, работаем с «предыдущим состоянием» напрямую)
+    const conversationSoFar = previousChats
+      .filter((msg) => msg.title === newTitle)
+      .map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+  
+    // Добавляем в конец текущее (только что созданное) сообщение пользователя
+    conversationSoFar.push({
+      role: userMessage.role,
+      content: userMessage.content,
+    });
+  
+    // Сформируем строку с источниками (вы сможете вывести её в конце ответа)
     const sourcesString =
       '\n\n**Источники:**\n\n' +
       context.sources
@@ -231,49 +259,47 @@ const App = () => {
             `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${src.name}](${src.link})`
         )
         .join('\n\n');
-
-
+  
     try {
       const lmstudio = createOpenAICompatible({
         baseURL: `${LM_STUDIO_HOST}/v1`,
       });
-
-      // Запускаем стриминг
+  
+      // 4. Запускаем стриминг, передавая всю историю
       const { textStream } = await streamText({
         model: lmstudio(LM_STUDIO_DEFAULT_MODEL),
-        messages: [currentMessage],
+        messages: conversationSoFar,
+        // onFinish срабатывает, когда поток полностью завершён
         onFinish: ({ text }) => {
-          // Когда стрим полностью закончится — снимаем флаг и
-          // обновляем последнее «assistant»-сообщение, добавив итоговый контент:
           setLoading(false);
+          // Дополняем последнее сообщение ассистента финальным контентом
           setPreviousChats((prev) => {
-            if (!prev.length) return prev;
             const updated = [...prev];
-            // Находим последнее добавленное ассистентом сообщение
-            // (или просто берём самый конец, если уверены, что он точно там):
-            const lastIndex = updated.length - 1;
-            // Обновляем его, добавляя получившийся контент:
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              content: text + sourcesString,
-            };
+            // Ищем последнее добавленное сообщение "assistant"
+            const lastIndex = updated
+              .map((m) => m.role)
+              .lastIndexOf('assistant');
+            if (lastIndex > -1) {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: text + sourcesString,
+              };
+            }
             return updated;
           });
         },
       });
-
-      // Формируем строку с источниками
-      // Добавляем «assistant»-сообщение со стримом (без content),
-      // контент у него дополнится, когда сработает onFinish.
+  
+      // Пока идёт стрим — добавляем ассистента с «пустым» контентом
+      // (он будет наполняться за счёт textStream)
       setPreviousChats((prev) => [
         ...prev,
         {
-          title: currentTitle || value,
+          title: newTitle,
           role: 'assistant',
           source,
-          stream: textStream,
-          sourcesString,
-          // Пока content нет (он "будет" стримиться)
+          stream: textStream, // сам поток
+          sourcesString,      // сохраняем, чтобы добавить в конце
         },
       ]);
     } catch (err) {
@@ -281,6 +307,7 @@ const App = () => {
       setLoading(false);
     }
   };
+  
 
   // Синхронизируем в localStorage
   useEffect(() => {
