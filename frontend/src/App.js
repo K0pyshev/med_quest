@@ -9,10 +9,13 @@ const LM_STUDIO_HOST = 'http://127.0.0.1:1234';
 const LM_STUDIO_DEFAULT_MODEL = 'llama-3.2-1b-instruct';
 const API_HOST = 'http://127.0.0.1:8888';
 
+
+
 // ------------------ Sidebar ------------------
-const Sidebar = ({ uniqueTitles, onSelectTitle, onNewChat }) => {
+const Sidebar = ({ uniqueTitles, onSelectTitle, onNewChat, onResetHistory, isClearing }) => {
   return (
     <section className="side-bar">
+      <h1 className="Name">MedQuest</h1>
       <button onClick={onNewChat}>Новый чат</button>
       <ul className="history">
         <p className="history-title">История</p>
@@ -23,7 +26,13 @@ const Sidebar = ({ uniqueTitles, onSelectTitle, onNewChat }) => {
         ))}
       </ul>
       <nav>
-        <p>Посмотреть планы</p>
+        <button
+          className={`history-reset ${isClearing ? 'clearing' : ''}`}
+          onClick={onResetHistory}
+          disabled={isClearing}
+        >
+          Очистить историю
+        </button>
       </nav>
     </section>
   );
@@ -47,7 +56,6 @@ const Header = ({ source, onSourceChange }) => {
           Клинические рекомендации
         </button>
       </div>
-      <h1 className="Name">MedQuest</h1>
     </div>
   );
 };
@@ -114,6 +122,7 @@ const MessageInput = ({ value, onChange, onSend, loading }) => {
           rows={1}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          
           style={{
             minHeight: '50px',
             maxHeight: '150px',
@@ -134,6 +143,7 @@ const MessageInput = ({ value, onChange, onSend, loading }) => {
 const App = () => {
   const [loading, setLoading] = useState(false);
   const [value, setValue] = useState('');
+  const [isClearing, setIsClearing] = useState(false);
 
   // Массив всех сообщений (всех чатов)
   const [previousChats, setPreviousChats] = useState(() => {
@@ -194,18 +204,18 @@ const App = () => {
   const getMessages = async () => {
     if (!value.trim()) return;
     setLoading(true);
-  
+
     // Если нет текущего заголовка — создаём его (будущий title)
     let newTitle = currentTitle;
     if (!newTitle) {
       newTitle = value;
       setCurrentTitle(newTitle);
     }
-  
+
     // 1. Получаем «контекст» из API (например, с помощью getContext)
     const context = await getContext();
     const haveSources = context.sources && context.sources.length > 0;
-  
+
     // 2. Формируем новое сообщение пользователя
     const userMessage = {
       title: newTitle,
@@ -213,12 +223,12 @@ const App = () => {
       source,
       content: `<!-- Контекст:${context.prompt.trim()}\n\n Вопрос: -->\n\n${value}`,
     };
-  
+
     // Сохраняем это новое сообщение в history
     setPreviousChats((prev) => [...prev, userMessage]);
     // Очищаем input
     setValue('');
-  
+
     // Если источников нет — можно вывести короткий ответ и завершить
     if (!haveSources) {
       setPreviousChats((prev) => [
@@ -233,7 +243,7 @@ const App = () => {
       setLoading(false);
       return;
     }
-  
+
     // 3. Формируем массив «всех реплик» для отправки в модель
     //    Берём все сообщения из текущего чата + новое сообщение пользователя
     //    (учитывая, что setPreviousChats — асинхронный, работаем с «предыдущим состоянием» напрямую)
@@ -243,13 +253,12 @@ const App = () => {
         role: msg.role,
         content: msg.content,
       }));
-  
+    console.log(conversationSoFar)
     // Добавляем в конец текущее (только что созданное) сообщение пользователя
     conversationSoFar.push({
       role: userMessage.role,
       content: userMessage.content,
     });
-  
     // Сформируем строку с источниками (вы сможете вывести её в конце ответа)
     const sourcesString =
       '\n\n**Источники:**\n\n' +
@@ -259,12 +268,12 @@ const App = () => {
             `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pdf](/description.png) [${src.name}](${src.link})`
         )
         .join('\n\n');
-  
+
     try {
       const lmstudio = createOpenAICompatible({
         baseURL: `${LM_STUDIO_HOST}/v1`,
       });
-  
+
       // 4. Запускаем стриминг, передавая всю историю
       const { textStream } = await streamText({
         model: lmstudio(LM_STUDIO_DEFAULT_MODEL),
@@ -289,7 +298,7 @@ const App = () => {
           });
         },
       });
-  
+
       // Пока идёт стрим — добавляем ассистента с «пустым» контентом
       // (он будет наполняться за счёт textStream)
       setPreviousChats((prev) => [
@@ -307,7 +316,7 @@ const App = () => {
       setLoading(false);
     }
   };
-  
+
 
   // Синхронизируем в localStorage
   useEffect(() => {
@@ -324,6 +333,18 @@ const App = () => {
     }
   }, [currentTitle, previousChats]);
 
+  // Функция очистки истории
+  const handleResetHistory = () => {
+    setIsClearing(true);
+    setTimeout(() => {
+      setPreviousChats([]);
+      setCurrentTitle(null);
+      localStorage.removeItem('previousChats');
+      localStorage.removeItem('currentTitle');
+      setIsClearing(false);
+    }, 500); // Должно совпадать с длительностью анимации
+  };
+
   // Сообщения только для выбранного чата
   const currentChat = previousChats.filter((ch) => ch.title === currentTitle);
 
@@ -336,6 +357,8 @@ const App = () => {
         uniqueTitles={uniqueTitles}
         onSelectTitle={handleClickTitle}
         onNewChat={createNewChat}
+        onResetHistory={handleResetHistory}
+        isClearing={isClearing}
       />
       <div className="mainElemets">
         <Header source={source} onSourceChange={handleSourceClick} />

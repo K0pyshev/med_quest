@@ -38,15 +38,17 @@ app.add_middleware(
 
 clinrecDb = Chroma(
     persist_directory=CHROMA_CLINREC_PATH, 
-            embedding_function= HuggingFaceEmbeddings(
-       model_name='intfloat/multilingual-e5-large',
-       model_kwargs={'device': 'cuda'})
+    embedding_function= HuggingFaceEmbeddings(
+        model_name='intfloat/multilingual-e5-large',
+        model_kwargs={'device': 'cuda'},
+        cache_folder='models')
 )
 msdDb = Chroma(
     persist_directory=CHROMA_MSD_PATH, 
-            embedding_function= HuggingFaceEmbeddings(
-       model_name='intfloat/multilingual-e5-large',
-       model_kwargs={'device': 'cuda'})
+    embedding_function= HuggingFaceEmbeddings(
+        model_name='intfloat/multilingual-e5-large',
+        model_kwargs={'device': 'cuda'},
+        cache_folder='models')
 )
 
 @app.get("/")

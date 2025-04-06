@@ -7,8 +7,7 @@
 
 html {
   /*scrollbar-color: #494949 rgba(0, 0, 0, 0.01);*/
-}   
-
+}
 
 body {
   margin: 0;
@@ -23,7 +22,7 @@ body {
 .side-bar {
   background-color: #212121;
   height: 100vh;
-  width: 244px;
+  width: 245px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -31,12 +30,58 @@ body {
 
 button {
   font-size: 16px;
-  border:none;
+  border: none;
   /*border: solid 0.5px rgba(255, 255, 255, 0.5);*/
   background-color: transparent;
   border-radius: 5px;
   padding: 10px;
   margin: 10px;
+}
+
+.history-reset {
+  margin: 10px;
+  padding: 10px;
+  width: 225px;
+  box-sizing: border-box;
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.history-reset.clearing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right,
+      rgba(255, 75, 75, 0.3) 0%,
+      rgba(255, 75, 75, 0.15) 100%);
+  animation: proper-erase 0.5s linear forwards;
+}
+
+@keyframes proper-erase {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Анимация нажатия для всех кнопок */
+button:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.history-reset:hover {
+  background-color: #333333;
+  transition: background-color 0.3s ease, transform 0.2s ease, border-color 0.3s;
 }
 
 button:hover {
@@ -45,12 +90,25 @@ button:hover {
 }
 
 nav {
-  border-top: solid 0.5px rgba(255, 255, 255, 0.5);
-  padding: 10px;
-  margin: 10px;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* либо align-items: stretch; либо можно вообще не указывать */
+  align-items: stretch;
+  position: relative;
+}
+
+nav::before {
+  content: "";
+  display: block;
+  width: 80%;
+  /* 50% от ширины nav, чтобы линия была короче */
+  margin: 0 auto;
+  /* выравниваем по центру */
+  border-top: solid 0.5px rgba(255, 255, 255, 0.5);
+  /* Если нужна фиксация высоты/отступов – можно добавить margin-top и т.п. */
+  margin-top: 10px;
 }
 
 .history {
@@ -60,15 +118,15 @@ nav {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 16px; 
+  font-size: 16px;
 }
 
 .history li {
   list-style-type: none;
   padding: 15px 0;
   cursor: pointer;
-  text-overflow: ellipsis; 
-  white-space: nowrap; 
+  text-overflow: ellipsis;
+  white-space: nowrap;
   overflow: hidden;
   width: 100%;
 }
@@ -76,8 +134,10 @@ nav {
 .main {
   height: 100vh;
   width: 100%;
-  flex: 1;        /* растягиваемся на всё, что осталось */
-  min-width: 0;   /* убираем потенциальные горизонтальные скроллы */
+  flex: 1;
+  /* растягиваемся на всё, что осталось */
+  min-width: 0;
+  /* убираем потенциальные горизонтальные скроллы */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -87,27 +147,32 @@ nav {
 .Name {
   /* ОБЯЗАТЕЛЬНО СДЕЛАТЬ АДАПТИВ */
   font-size: 30px;
-  padding: 0px 40px 0px 0px;
-  
+  display: flex;
+  justify-content: center;
+
+
   /* Цвет текста по умолчанию */
   color: #868686;
-  
+
   /* Остальной базовый стиль */
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
   font-family: "Poppins", sans-serif;
-  transition: 0.3s; /* Можно добавить плавность перехода */
+  transition: 0.3s;
+  /* Можно добавить плавность перехода */
 }
 
 
 .Name:hover {
   background: linear-gradient(to right, #9f9f9f 0, #fff 10%, #868686 20%);
   background-position: 0;
-  background-size: 200% auto; /* при желании, чтобы градиент растягивался */
+  background-size: 200% auto;
+  /* при желании, чтобы градиент растягивался */
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent; /* делаем сам текст прозрачным, виден градиент */
-  
+  -webkit-text-fill-color: transparent;
+  /* делаем сам текст прозрачным, виден градиент */
+
   animation: shine 3s infinite linear;
   animation-fill-mode: forwards;
 }
@@ -117,42 +182,53 @@ nav {
   0% {
     background-position: 0;
   }
+
   60% {
     background-position: 180px;
   }
+
   100% {
     background-position: 180px;
   }
 }
+
 @-webkit-keyframes shine {
   0% {
     background-position: 0;
   }
+
   60% {
     background-position: 180px;
   }
+
   100% {
     background-position: 180px;
   }
 }
+
 @-o-keyframes shine {
   0% {
     background-position: 0;
   }
+
   60% {
     background-position: 180px;
   }
+
   100% {
     background-position: 180px;
   }
 }
+
 @keyframes shine {
   0% {
     background-position: 0;
   }
+
   60% {
     background-position: 180px;
   }
+
   100% {
     background-position: 180px;
   }
@@ -282,31 +358,41 @@ textarea:focus {
 .feed {
   overflow-y: auto;
   overflow-x: hidden;
-  width: 100%;         
-  max-width: 1200px; 
-  max-height: 930px; 
+  width: 100%;
+  height: calc(100vh - 340px);
+  max-width: 1200px;
+  max-height: 930px;
   padding: 0;
   border-radius: 20px;
   position: relative;
+  scroll-behavior: smooth;
 }
 
 .feed::-webkit-scrollbar {
-  width: 10px; /* Ширина скроллбара */
+  width: 10px;
+  /* Ширина скроллбара */
 }
 
 .feed::-webkit-scrollbar-track {
-  background: #212121; /* Цвет дорожки */
-  border-radius: 10px; /* Скругление углов дорожки */
-  margin-right: 0px; /* Отступ дорожки справа */
+  background: #212121;
+  /* Цвет дорожки */
+  border-radius: 10px;
+  /* Скругление углов дорожки */
+  margin-right: 0px;
+  /* Отступ дорожки справа */
 }
 
 .feed::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.05);; /* Цвет ползунка */
-  border-radius: 10px; /* Скругление углов ползунка */
+  background: rgba(255, 255, 255, 0.05);
+  ;
+  /* Цвет ползунка */
+  border-radius: 10px;
+  /* Скругление углов ползунка */
 }
 
 .feed::-webkit-scrollbar-thumb:hover {
-  background: #333333; /* Цвет ползунка при наведении */
+  background: #333333;
+  /* Цвет ползунка при наведении */
 }
 
 
@@ -316,47 +402,51 @@ textarea:focus {
 }
   */
 
-  .feed-item {
-    display: flex;
-    background-color: #212121;
-    width: 90%;
-    padding: 10px;
-    margin: 20px 20px 20px 20px;
-    border-radius: 20px;
-    color: rgba(255, 255, 255, 0.8);
-    text-align: left;
-  
-    /* Начальное состояние */
+.feed-item {
+  display: flex;
+  background-color: #212121;
+  width: 90%;
+  padding: 10px;
+  margin: 20px 20px 20px 20px;
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: left;
+
+  /* Начальное состояние */
+  opacity: 0;
+  transform: translateY(15px) scale(0.97);
+  animation: feed-item-appear 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.feed-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.feed-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.feed-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.feed-item:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+@keyframes feed-item-appear {
+  0% {
     opacity: 0;
     transform: translateY(15px) scale(0.97);
-    animation: feed-item-appear 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
-  
-  .feed-item:nth-child(1) {
-    animation-delay: 0.05s;
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
-  .feed-item:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  .feed-item:nth-child(3) {
-    animation-delay: 0.15s;
-  }
-  .feed-item:nth-child(4) {
-    animation-delay: 0.2s;
-  }
-  
-  @keyframes feed-item-appear {
-    0% {
-      opacity: 0;
-      transform: translateY(15px) scale(0.97);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-  
-  
+}
+
+
 
 .message {
   line-height: 1.5;
@@ -391,18 +481,22 @@ textarea:focus {
 
 .source-button {
   font-size: 16px;
-  /*border: solid 1px rgba(255, 255, 255, 0.5);*/
   background-color: transparent;
   border-radius: 5px;
   padding: 10px;
   margin: 10px 0;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease, border-color 0.3s;
-  transition: box-shadow 0.5s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .source-button:hover {
   background-color: #333333;
+  transform: translateY(2px);
+  box-shadow: 
+    0 4px 20px rgba(194, 255, 247, 0.25),
+    0 2px 6px rgba(194, 255, 247, 0.15),
+    0 0 0 2px rgba(194, 255, 247, 0.1);
+  border-color: rgba(194, 255, 247, 0.3);
 }
 
 .source-button:active {
@@ -418,6 +512,7 @@ textarea:focus {
     rgba(194, 255, 247, 0.05) 0 -3px 5px;
 }
 
+
 .history-title {
   display: flex;
   flex-direction: column;
@@ -430,9 +525,11 @@ textarea:focus {
 
 .mainElemets {
   display: flex;
-  flex: 1; 
-  flex-direction: column; /* колонки слева направо */
-  width: 100%;         /* можно оставить, можно убрать, т.к. flex:1 важнее */
+  flex: 1;
+  flex-direction: column;
+  /* колонки слева направо */
+  width: 100%;
+  /* можно оставить, можно убрать, т.к. flex:1 важнее */
 }
 
 .main-header {
@@ -440,8 +537,10 @@ textarea:focus {
   height: 170px;
   display: flex;
   flex-direction: row;
-  align-items: baseline; /* Выравнивание по вертикали */
-  justify-content: space-between; /* Распределяет элементы по краям */
+  align-items: baseline;
+  /* Выравнивание по вертикали */
+  justify-content: space-between;
+  /* Распределяет элементы по краям */
 }
 
 .message img {
@@ -449,4 +548,3 @@ textarea:focus {
   height: 25px;
   vertical-align: bottom;
 }
-
