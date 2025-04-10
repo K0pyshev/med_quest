@@ -14,7 +14,9 @@ FILES_HOST="http://localhost:9999/files/"
 
 CHROMA_CLINREC_PATH = r"chroma/clinrec_chroma"
 CHROMA_MSD_PATH = r"chroma/msd_chroma"
+CHROMA_RLS_PATH = r"chroma/rls_chroma"
 SEARCH_RESULTS_NUMBER = 2
+MODEL_PATH = r"models/multilingual-e5-large"
 
 PROMPT_TEMPLATE = """
 {context}
@@ -23,6 +25,7 @@ PROMPT_TEMPLATE = """
 class SourceType(str, Enum):
     clinrec = "clinrec"
     msd = "msd"
+    rls = "rls"
 
 app = FastAPI()
 
@@ -39,14 +42,21 @@ app.add_middleware(
 clinrecDb = Chroma(
     persist_directory=CHROMA_CLINREC_PATH, 
     embedding_function= HuggingFaceEmbeddings(
-        model_name='intfloat/multilingual-e5-large',
+        model_name=MODEL_PATH,
         model_kwargs={'device': 'cuda'},
         cache_folder='models')
 )
 msdDb = Chroma(
     persist_directory=CHROMA_MSD_PATH, 
     embedding_function= HuggingFaceEmbeddings(
-        model_name='intfloat/multilingual-e5-large',
+        model_name=MODEL_PATH,
+        model_kwargs={'device': 'cuda'},
+        cache_folder='models')
+)
+rlsDb = Chroma(
+    persist_directory=CHROMA_RLS_PATH, 
+    embedding_function= HuggingFaceEmbeddings(
+        model_name=MODEL_PATH,
         model_kwargs={'device': 'cuda'},
         cache_folder='models')
 )
@@ -73,8 +83,10 @@ def get_question(q: str, source: SourceType):
     if source is SourceType.clinrec:
         results = clinrecDb.similarity_search_with_relevance_scores(q, k=SEARCH_RESULTS_NUMBER) 
     elif source is SourceType.msd:
-            results = msdDb.similarity_search_with_relevance_scores(q, k=2) 
-
+            results = msdDb.similarity_search_with_relevance_scores(q, k=SEARCH_RESULTS_NUMBER) 
+    elif source is SourceType.rls:
+        results = rlsDb.similarity_search_with_relevance_scores(q, k=SEARCH_RESULTS_NUMBER) 
+        
     if len(results) == 0 or results[0][1] < 0.7:
         return  {
             "question": q,

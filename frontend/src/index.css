@@ -59,7 +59,7 @@ button {
   width: 100%;
   height: 100%;
   background: linear-gradient(to right,
-      rgba(255, 75, 75, 0.3) 0%,
+      rgba(255, 75, 75, 0.9) 0%,
       rgba(255, 75, 75, 0.15) 100%);
   animation: proper-erase 0.5s linear forwards;
 }
@@ -122,6 +122,13 @@ nav::before {
 }
 
 .history li {
+  position: relative;
+  /* нужно для позиционирования псевдоэлемента */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  align-items: anchor-center;
   list-style-type: none;
   padding: 15px 0;
   cursor: pointer;
@@ -129,19 +136,21 @@ nav::before {
   white-space: nowrap;
   overflow: hidden;
   width: 100%;
+  -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
 }
 
 .main {
   height: 100vh;
   width: 100%;
   flex: 1;
-  /* растягиваемся на всё, что осталось */
   min-width: 0;
-  /* убираем потенциальные горизонтальные скроллы */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 0;
+  box-sizing: border-box;
 }
 
 .Name {
@@ -341,14 +350,13 @@ textarea {
   resize: none;
   overflow: hidden;
   font-family: 'Open Sans', sans-serif;
-  font-size: px;
   color: #ffffff;
   line-height: 1.5;
   transition: box-shadow 0.5s ease;
 }
 
 textarea:focus {
-  box-shadow: rgba(194, 255, 247, 0.3) 0 54px 55px,
+  box-shadow: rgba(194, 255, 247, 0.7) 0 54px 55px,
     rgba(194, 255, 247, 0.05) 0 -12px 30px,
     rgba(194, 255, 247, 0.05) 0 4px 6px,
     rgba(194, 255, 247, 0.05) 0 12px 13px,
@@ -359,9 +367,9 @@ textarea:focus {
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  height: calc(100vh - 340px);
-  max-width: 1200px;
-  max-height: 930px;
+  height: calc(100vh - 300px);
+  max-width: 1700px;
+  max-height: 1900px;
   padding: 0;
   border-radius: 20px;
   position: relative;
@@ -416,6 +424,9 @@ textarea:focus {
   opacity: 0;
   transform: translateY(15px) scale(0.97);
   animation: feed-item-appear 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  background-color: #212121;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.03),
+    inset 0 -1px 2px rgba(194, 255, 247, 0.2);
 }
 
 .feed-item:nth-child(1) {
@@ -459,6 +470,91 @@ textarea:focus {
   min-width: 100px;
 }
 
+.source-selector {
+  position: relative;
+  display: inline-block;
+  margin-left: 20px;
+  margin-top: 20px;
+  width: fit-content;
+  /* подстраивается под кнопку */
+}
+
+.selector-toggle {
+  background-color: transparent;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 300px;
+  width: 300px;
+  transition: all 0.3s ease-in-out;
+  border-color: rgba(194, 255, 247, 0.9);
+  box-shadow:
+    0 20px 50px rgba(255, 255, 255, 0.15),
+    0 2px 20px rgba(194, 255, 247, 0.25),
+    0 0 0 0.5px rgba(194, 255, 247, 0.6);
+}
+
+
+.selector-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.arrow-icon {
+  font-size: 24px;
+  margin-left: 10px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+  transform: rotate(90deg);
+  /* вниз */
+}
+
+.arrow-icon.rotate {
+  transform: rotate(-90deg);
+  /* вверх */
+}
+
+
+.selector-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  /* небольшое расстояние */
+  background-color: #212121;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 999;
+  width: 100%;
+  /* теперь он совпадает по ширине с кнопкой */
+  list-style: none;
+  padding: 0;
+}
+
+
+.selector-option {
+  padding: 12px 16px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.selector-option:hover {
+  background-color: #333333;
+}
+
+.selector-option.active {
+  color: #ffffff;
+}
+
+
 .source-title {
 
   display: flex;
@@ -492,7 +588,7 @@ textarea:focus {
 .source-button:hover {
   background-color: #333333;
   transform: translateY(2px);
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(194, 255, 247, 0.25),
     0 2px 6px rgba(194, 255, 247, 0.15),
     0 0 0 2px rgba(194, 255, 247, 0.1);
@@ -534,7 +630,7 @@ textarea:focus {
 
 .main-header {
   width: 100%;
-  height: 170px;
+  height: 90px;
   display: flex;
   flex-direction: row;
   align-items: baseline;
@@ -548,3 +644,5 @@ textarea:focus {
   height: 25px;
   vertical-align: bottom;
 }
+
+

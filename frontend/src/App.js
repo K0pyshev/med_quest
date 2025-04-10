@@ -3,6 +3,7 @@ import { ReactComponent as Upward } from './icons/arrow_upward_24dp_E8EAED_FILL0
 import { streamText } from 'ai';
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
+
 import { Message } from './Message'; // <-- наш компонент с логикой стриминга
 
 const LM_STUDIO_HOST = 'http://127.0.0.1:1234';
@@ -14,47 +15,71 @@ const API_HOST = 'http://127.0.0.1:8888';
 // ------------------ Sidebar ------------------
 const Sidebar = ({ uniqueTitles, onSelectTitle, onNewChat, onResetHistory, isClearing }) => {
   return (
-    <section className="side-bar">
-      <h1 className="Name">MedQuest</h1>
-      <button onClick={onNewChat}>Новый чат</button>
-      <ul className="history">
-        <p className="history-title">История</p>
-        {uniqueTitles?.map((title, index) => (
-          <li key={index} onClick={() => onSelectTitle(title)}>
-            {title}
-          </li>
-        ))}
-      </ul>
-      <nav>
-        <button
-          className={`history-reset ${isClearing ? 'clearing' : ''}`}
-          onClick={onResetHistory}
-          disabled={isClearing}
-        >
-          Очистить историю
-        </button>
-      </nav>
-    </section>
+    <div className="sidebar-wrapper">
+      <div className="background-glow"></div>
+
+      <section className="side-bar">
+        <h1 className="Name">MedQuest</h1>
+        <button onClick={onNewChat}>Новый чат</button>
+        <ul className="history">
+          <p className="history-title">История</p>
+          {uniqueTitles?.map((title, index) => (
+            <li key={index} onClick={() => onSelectTitle(title)}>
+              {title}
+            </li>
+          ))}
+        </ul>
+        <nav>
+          <button
+            className={`history-reset ${isClearing ? 'clearing' : ''}`}
+            onClick={onResetHistory}
+            disabled={isClearing}
+          >
+            Очистить историю
+          </button>
+        </nav>
+      </section>
+    </div>
+
   );
 };
-
-// ------------------ Header ------------------
+// ------------------ Header ------------------/
 const Header = ({ source, onSourceChange }) => {
+  const [open, setOpen] = useState(false);
+
+  const sources = [
+    { value: 'msd', label: 'MSD справочник' },
+    { value: 'clinrec', label: 'Клинические рекомендации' },
+    { value: 'rls', label: 'Энциклопедия РЛС2025' },
+  ];
+
+  const selected = sources.find((s) => s.value === source);
+
   return (
     <div className="main-header">
-      <div className="source-options">
-        <button
-          className={`source-button ${source === 'msd' ? 'active' : ''}`}
-          onClick={() => onSourceChange('msd')}
-        >
-          MSD справочник
+      <div className="source-selector">
+        <button className="selector-toggle" onClick={() => setOpen(!open)}>
+          {selected.label}
+          <span className={`material-symbols-outlined arrow-icon ${open ? 'rotate' : ''}`}>
+            arrow_forward_ios
+          </span>
         </button>
-        <button
-          className={`source-button ${source === 'clinrec' ? 'active' : ''}`}
-          onClick={() => onSourceChange('clinrec')}
-        >
-          Клинические рекомендации
-        </button>
+        {open && (
+          <ul className="selector-dropdown">
+            {sources.map((src) => (
+              <li
+                key={src.value}
+                className={`selector-option ${source === src.value ? 'active' : ''}`}
+                onClick={() => {
+                  onSourceChange(src.value);
+                  setOpen(false);
+                }}
+              >
+                {src.label}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -89,7 +114,7 @@ const ChatFeed = ({ currentChat }) => {
 
 
 // ------------------ MessageInput ------------------
-const MessageInput = ({ value, onChange, onSend, loading }) => {
+const MessageInput = ({ value, onChange, onSend, loading}) => {
   // Функция для авто-увеличения высоты текстового поля
   const handleInput = (e) => {
     const textarea = e.target;
@@ -122,7 +147,7 @@ const MessageInput = ({ value, onChange, onSend, loading }) => {
           rows={1}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
-          
+
           style={{
             minHeight: '50px',
             maxHeight: '150px',
