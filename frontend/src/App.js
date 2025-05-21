@@ -6,6 +6,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 import { Message } from './Message'; // <-- наш компонент с логикой стриминга
 
+
 const LM_STUDIO_HOST = 'http://127.0.0.1:1234';
 const LM_STUDIO_DEFAULT_MODEL = 'llama-3.2-1b-instruct';
 const API_HOST = 'http://127.0.0.1:8888';
@@ -97,6 +98,7 @@ const ChatFeed = ({ currentChat }) => {
       top: feedRef.current.scrollHeight,
       behavior: 'smooth',
     });
+    console.log(currentChat)
   }, [currentChat]);
 
   return (
@@ -188,6 +190,12 @@ const App = () => {
     const chats = previousChats.filter((ch) => ch.title === currentTitle);
     const currentSource = chats?.slice(-1)[0]?.source;
     return currentSource || 'msd';
+  });
+
+  const [currentChat, setCurrentChat] = useState(() => {
+    if (!currentTitle || !previousChats) return [];
+    const chats = previousChats.filter((ch) => ch.title === currentTitle);
+    return chats || [];
   });
 
   // Смена источника
@@ -356,6 +364,7 @@ const App = () => {
     if (currentSource) {
       setSource(currentSource);
     }
+    setCurrentChat(chats)
   }, [currentTitle, previousChats]);
 
   // Функция очистки истории
@@ -371,7 +380,7 @@ const App = () => {
   };
 
   // Сообщения только для выбранного чата
-  const currentChat = previousChats.filter((ch) => ch.title === currentTitle);
+
 
   // Уникальные заголовки
   const uniqueTitles = Array.from(new Set(previousChats.map((ch) => ch.title)));
