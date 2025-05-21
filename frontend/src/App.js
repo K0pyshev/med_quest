@@ -8,7 +8,7 @@ import { Message } from './Message'; // <-- наш компонент с лог�
 
 
 const LM_STUDIO_HOST = 'http://127.0.0.1:1234';
-const LM_STUDIO_DEFAULT_MODEL = 'llama-3.2-1b-instruct';
+const LM_STUDIO_DEFAULT_MODEL = 'meta-llama-3.1-8b-instruct';
 const API_HOST = 'http://127.0.0.1:8888';
 
 
@@ -397,7 +397,7 @@ const App = () => {
       <div className="mainElemets">
         <Header source={source} onSourceChange={handleSourceClick} />
         <section className="main">
-          <ChatFeed currentChat={currentChat} />
+          <ChatFeed key={currentTitle} currentChat={currentChat} />
           <MessageInput
             value={value}
             onChange={(e) => setValue(e.target.value)}
