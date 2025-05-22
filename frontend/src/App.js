@@ -192,11 +192,10 @@ const App = () => {
     return currentSource || 'msd';
   });
 
-  const [currentChat, setCurrentChat] = useState(() => {
-    if (!currentTitle || !previousChats) return [];
-    const chats = previousChats.filter((ch) => ch.title === currentTitle);
-    return chats || [];
-  });
+const [currentChat, setCurrentChat] = useState(() => {
+  const savedChat = localStorage.getItem('currentChat');
+  return savedChat ? JSON.parse(savedChat) : [];
+});
 
   // Смена источника
   const handleSourceClick = (newSource) => {
@@ -204,16 +203,21 @@ const App = () => {
   };
 
   // Создать новый чат
-  const createNewChat = () => {
-    setValue('');
-    setCurrentTitle(null);
-  };
+const createNewChat = () => {
+  setValue('');
+  setCurrentTitle(null);
+  setCurrentChat([]); // Явная очистка текущего чата
+};
 
   // Переключить на существующий чат в истории
-  const handleClickTitle = (title) => {
-    setValue('');
-    setCurrentTitle(title);
-  };
+const handleClickTitle = (title) => {
+  setValue('');
+  setCurrentTitle(title);
+  
+  // Явное обновление текущего чата
+  const chats = previousChats.filter((ch) => ch.title === title);
+  setCurrentChat(chats);
+};
 
   // Запрос контекста
   const getContext = async () => {
@@ -258,7 +262,14 @@ const App = () => {
     };
 
     // Сохраняем это новое сообщение в history
-    setPreviousChats((prev) => [...prev, userMessage]);
+setPreviousChats((prev) => {
+  const newChats = [...prev, userMessage];
+  // Автоматическое обновление текущего чата
+  if (userMessage.title === currentTitle) {
+    setCurrentChat(newChats.filter(ch => ch.title === currentTitle));
+  }
+  return newChats;
+});
     // Очищаем input
     setValue('');
 
@@ -352,20 +363,27 @@ const App = () => {
 
 
   // Синхронизируем в localStorage
-  useEffect(() => {
-    localStorage.setItem('previousChats', JSON.stringify(previousChats));
-    localStorage.setItem('currentTitle', JSON.stringify(currentTitle));
-  }, [previousChats, currentTitle]);
+useEffect(() => {
+  localStorage.setItem('previousChats', JSON.stringify(previousChats));
+  localStorage.setItem('currentTitle', JSON.stringify(currentTitle));
+  localStorage.setItem('currentChat', JSON.stringify(currentChat));
+}, [previousChats, currentTitle, currentChat]);
 
   // При смене чата — восстанавливаем source (если есть)
-  useEffect(() => {
-    const chats = previousChats.filter((ch) => ch.title === currentTitle);
-    const currentSource = chats?.slice(-1)[0]?.source;
-    if (currentSource) {
-      setSource(currentSource);
-    }
-    setCurrentChat(chats)
-  }, [currentTitle, previousChats]);
+useEffect(() => {
+  if (!currentTitle) {
+    setCurrentChat([]);
+    return;
+  }
+  
+  const chats = previousChats.filter((ch) => ch.title === currentTitle);
+  setCurrentChat(chats);
+  
+  if (chats.length > 0) {
+    const lastSource = chats[chats.length - 1].source;
+    setSource(lastSource);
+  }
+}, [currentTitle, previousChats]);
 
   // Функция очистки истории
   const handleResetHistory = () => {
